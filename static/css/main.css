@@ -697,6 +697,11 @@ table.dataTable {
     color: #45d6ef;
 }
 
+.color-attachment-opened {
+    font-weight: bold;
+    color: #967AA1;
+}
+
 .color-success {
     color: #f05b4f;
 }
