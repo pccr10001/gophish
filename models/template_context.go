@@ -5,6 +5,7 @@ import (
 	"net/mail"
 	"net/url"
 	"path"
+	"reflect"
 	"text/template"
 )
 
@@ -18,12 +19,13 @@ type TemplateContext interface {
 // PhishingTemplateContext is the context that is sent to any template, such
 // as the email or landing page content.
 type PhishingTemplateContext struct {
-	From        string
-	URL         string
-	Tracker     string
-	TrackingURL string
-	RId         string
-	BaseURL     string
+	From          string
+	URL           string
+	Tracker       string
+	TrackingURL   string
+	RId           string
+	BaseURL       string
+	AttachmentURL string
 	BaseRecipient
 }
 
@@ -61,11 +63,16 @@ func NewPhishingTemplateContext(ctx TemplateContext, r BaseRecipient, rid string
 	trackingURL.Path = path.Join(trackingURL.Path, "/track")
 	trackingURL.RawQuery = q.Encode()
 
+	attachmentURL, _ := url.Parse(templateURL)
+	attachmentURL.Path = path.Join(trackingURL.Path, "attachment")
+	attachmentURL.RawQuery = q.Encode()
+
 	return PhishingTemplateContext{
 		BaseRecipient: r,
 		BaseURL:       baseURL.String(),
 		URL:           phishURL.String(),
 		TrackingURL:   trackingURL.String(),
+		AttachmentURL: attachmentURL.String(),
 		Tracker:       "<img alt='' style='display: none' src='" + trackingURL.String() + "'/>",
 		From:          fn,
 		RId:           rid,
@@ -74,14 +81,27 @@ func NewPhishingTemplateContext(ctx TemplateContext, r BaseRecipient, rid string
 
 // ExecuteTemplate creates a templated string based on the provided
 // template body and data.
-func ExecuteTemplate(text string, data interface{}) (string, error) {
+func ExecuteTemplateFull(text string, data interface{}, isAttachment bool) (string, error) {
 	buff := bytes.Buffer{}
 	tmpl, err := template.New("template").Parse(text)
 	if err != nil {
 		return buff.String(), err
 	}
-	err = tmpl.Execute(&buff, data)
+
+	if isAttachment {
+		var ptx = data.(PhishingTemplateContext)
+		orig := &ptx
+		ptx2 := *orig
+		ptx2.TrackingURL = ptx2.AttachmentURL
+		err = tmpl.Execute(&buff, ptx2)
+	} else {
+		err = tmpl.Execute(&buff, data)
+	}
+
 	return buff.String(), err
+}
+func ExecuteTemplate(text string, data interface{}) (string, error) {
+	return ExecuteTemplateFull(text, data, false)
 }
 
 // ValidationContext is used for validating templates and pages
@@ -123,4 +143,18 @@ func ValidateTemplate(text string) error {
 		return err
 	}
 	return nil
+}
+
+func Clone(oldObj interface{}) interface{} {
+	newObj := reflect.New(reflect.TypeOf(oldObj).Elem())
+	oldVal := reflect.ValueOf(oldObj).Elem()
+	newVal := newObj.Elem()
+	for i := 0; i < oldVal.NumField(); i++ {
+		newValField := newVal.Field(i)
+		if newValField.CanSet() {
+			newValField.Set(oldVal.Field(i))
+		}
+	}
+
+	return newObj.Interface()
 }

@@ -24,17 +24,18 @@ type mmGeoPoint struct {
 // Result contains the fields for a result object,
 // which is a representation of a target in a campaign.
 type Result struct {
-	Id           int64     `json:"-"`
-	CampaignId   int64     `json:"-"`
-	UserId       int64     `json:"-"`
-	RId          string    `json:"id"`
-	Status       string    `json:"status" sql:"not null"`
-	IP           string    `json:"ip"`
-	Latitude     float64   `json:"latitude"`
-	Longitude    float64   `json:"longitude"`
-	SendDate     time.Time `json:"send_date"`
-	Reported     bool      `json:"reported" sql:"not null"`
-	ModifiedDate time.Time `json:"modified_date"`
+	Id               int64     `json:"-"`
+	CampaignId       int64     `json:"-"`
+	UserId           int64     `json:"-"`
+	RId              string    `json:"id"`
+	Status           string    `json:"status" sql:"not null"`
+	IP               string    `json:"ip"`
+	Latitude         float64   `json:"latitude"`
+	Longitude        float64   `json:"longitude"`
+	SendDate         time.Time `json:"send_date"`
+	Reported         bool      `json:"reported" sql:"not null"`
+	AttachmentOpened bool      `json:"attachment_opened" sql:"not null"`
+	ModifiedDate     time.Time `json:"modified_date"`
 	BaseRecipient
 }
 
@@ -132,6 +133,18 @@ func (r *Result) HandleFormSubmit(details EventDetails) error {
 	}
 	r.Status = EventDataSubmit
 	r.ModifiedDate = event.Time
+	return db.Save(r).Error
+}
+
+// HandleAttachmentOpened updates a Result in the case where the attachment
+// was opened.
+func (r *Result) HandleAttachmentOpened(details EventDetails) error {
+	event, err := r.createEvent(EventAttachmentOpened, details)
+	if err != nil {
+		return err
+	}
+	r.ModifiedDate = event.Time
+	r.AttachmentOpened = true
 	return db.Save(r).Error
 }
 

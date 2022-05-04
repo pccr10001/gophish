@@ -30,6 +30,12 @@ var statuses = {
         icon: "fa-envelope-open",
         point: "ct-point-opened"
     },
+    "Attachment Opened": {
+        color: "#967AA1",
+        label: "label-warning",
+        icon: "fa-paperclip",
+        point: "ct-point-opened"
+    },
     "Clicked Link": {
         color: "#F39C12",
         label: "label-clicked",
@@ -103,6 +109,7 @@ var statusMapping = {
     "Clicked Link": "clicked",
     "Submitted Data": "submitted_data",
     "Email Reported": "reported",
+    "Attachment Opened": "attachment_opened",
 }
 
 // This is an underwhelming attempt at an enum
@@ -111,7 +118,8 @@ var progressListing = [
     "Email Sent",
     "Email Opened",
     "Clicked Link",
-    "Submitted Data"
+    "Submitted Data",
+    "Attachment Opened"
 ]
 
 var campaign = {}
@@ -516,6 +524,7 @@ var renderTimelineChart = function (chartopts) {
 
 /* Renders a pie chart using the provided chartops */
 var renderPieChart = function (chartopts) {
+    console.log(chartopts);
     return Highcharts.chart(chartopts['elemId'], {
         chart: {
             type: 'pie',

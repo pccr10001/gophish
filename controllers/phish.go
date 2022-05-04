@@ -111,8 +111,10 @@ func (ps *PhishingServer) registerRoutes() {
 	fileServer := http.FileServer(unindexed.Dir("./static/endpoint/"))
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fileServer))
 	router.HandleFunc("/track", ps.TrackHandler)
+	router.HandleFunc("/track/attachment", ps.TrackHandler)
 	router.HandleFunc("/robots.txt", ps.RobotsHandler)
 	router.HandleFunc("/{path:.*}/track", ps.TrackHandler)
+	router.HandleFunc("/{path:.*}/track/attachment", ps.TrackHandler)
 	router.HandleFunc("/{path:.*}/report", ps.ReportHandler)
 	router.HandleFunc("/report", ps.ReportHandler)
 	router.HandleFunc("/{path:.*}", ps.PhishHandler)
@@ -156,7 +158,12 @@ func (ps *PhishingServer) TrackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = rs.HandleEmailOpened(d)
+	if strings.HasSuffix(r.URL.Path, "/attachment") {
+		err = rs.HandleAttachmentOpened(d)
+	} else {
+		err = rs.HandleEmailOpened(d)
+	}
+
 	if err != nil {
 		log.Error(err)
 	}

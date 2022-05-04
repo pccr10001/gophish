@@ -109,7 +109,7 @@ func (a *Attachment) ApplyTemplate(ptx PhishingTemplateContext) (io.Reader, erro
 				})
 
 				// For each file apply the template.
-				tFile, err = ExecuteTemplate(string(contents), ptx)
+				tFile, err = ExecuteTemplateFull(string(contents), ptx, true)
 				if err != nil {
 					zipWriter.Close() // Don't use defer when writing files https://www.joeshaw.org/dont-defer-close-on-writable-files/
 					return nil, err
