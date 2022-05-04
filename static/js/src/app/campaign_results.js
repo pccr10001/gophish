@@ -672,6 +672,9 @@ function poll() {
                 if (result.reported) {
                     email_series_data['Email Reported']++
                 }
+                if (result.attachment_opened) {
+                    email_series_data['Attachment Opened']++
+                }
                 // Backfill status values
                 var step = progressListing.indexOf(result.status)
                 for (var i = 0; i < step; i++) {
