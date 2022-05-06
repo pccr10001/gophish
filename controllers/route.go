@@ -152,9 +152,21 @@ func (as *AdminServer) registerRoutes() {
 	if len(csrfKey) == 0 {
 		csrfKey = []byte(auth.GenerateSecureKey(auth.APIKeyLength))
 	}
-	csrfHandler := csrf.Protect(csrfKey,
-		csrf.FieldName("csrf_token"),
-		csrf.Secure(as.config.UseTLS))
+	var csrfHandler func(http.Handler) http.Handler
+	if len(as.config.TrustedOrigins) > 0 {
+		origins := strings.Split(as.config.TrustedOrigins, ",")
+		csrfHandler = csrf.Protect(csrfKey,
+			csrf.FieldName("csrf_token"),
+			csrf.Secure(as.config.UseTLS),
+			csrf.TrustedOrigins(origins),
+		)
+		log.Infof("Starting server while trusting: %v", origins)
+	} else {
+		csrfHandler = csrf.Protect(csrfKey,
+			csrf.FieldName("csrf_token"),
+			csrf.Secure(as.config.UseTLS),
+		)
+	}
 	adminHandler := csrfHandler(router)
 	adminHandler = mid.Use(adminHandler.ServeHTTP, mid.CSRFExceptions, mid.GetContext, mid.ApplySecurityHeaders)
 
